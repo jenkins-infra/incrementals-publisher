@@ -86,7 +86,7 @@ class IncrementalsPlugin {
         },
         method: 'PUT',
         body: fs.createReadStream(archivePath)
-    });
+      });
     this.context.log.info('Upload status', upload.status, await upload.text());
     return upload;
   }
