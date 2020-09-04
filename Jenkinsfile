@@ -1,0 +1,1 @@
+buildDockerAndPublishImage('incrementals-publisher')
