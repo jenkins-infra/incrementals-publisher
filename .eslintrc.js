@@ -28,6 +28,7 @@ module.exports = {
   ],
   "rules": {
     "indent": [2,2],
+    "key-spacing": ["error", { "mode": "strict" }],
     "require-atomic-updates": "off"
   }
 };

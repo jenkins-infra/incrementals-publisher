@@ -10,14 +10,10 @@ const path  = require('path');
 const util  = require('util');
 const url   = require('url');
 
+const config      = require('./lib/config');
 const github      = require('./lib/github');
 const pipeline    = require('./lib/pipeline');
 const permissions = require('./lib/permissions');
-
-const JENKINS_HOST     = process.env.JENKINS_HOST || 'https://ci.jenkins.io/';
-const INCREMENTAL_URL  = process.env.INCREMENTAL_URL || 'https://repo.jenkins-ci.org/incrementals/'
-const ARTIFACTORY_KEY  = process.env.ARTIFACTORY_KEY || 'invalid-key';
-const JENKINS_AUTH     = process.env.JENKINS_AUTH;
 
 const TEMP_ARCHIVE_DIR = path.join(os.tmpdir(), 'incrementals-');
 const mkdtemp          = util.promisify(fs.mkdtemp);
@@ -77,12 +73,12 @@ class IncrementalsPlugin {
   }
 
   async uploadToArtifactory(archivePath) {
-    const upload = await this.fetch(util.format('%sarchive.zip', INCREMENTAL_URL),
+    const upload = await this.fetch(util.format('%sarchive.zip', config.INCREMENTAL_URL),
       {
         headers: {
-          'X-Explode-Archive' : true,
-          'X-Explode-Archive-Atomic' : true,
-          'X-JFrog-Art-Api' : ARTIFACTORY_KEY,
+          'X-Explode-Archive': true,
+          'X-Explode-Archive-Atomic': true,
+          'X-JFrog-Art-Api': config.ARTIFACTORY_KEY,
         },
         method: 'PUT',
         body: fs.createReadStream(archivePath)
@@ -116,7 +112,7 @@ class IncrementalsPlugin {
 
   isValidUrl(buildUrl) {
     const parsedUrl = url.parse(buildUrl);
-    const parsedJenkinsHost = url.parse(JENKINS_HOST);
+    const parsedJenkinsHost = url.parse(config.JENKINS_HOST);
 
     if (`${parsedUrl.protocol}//${parsedUrl.host}` != `${parsedJenkinsHost.protocol}//${parsedJenkinsHost.host}`) {
       throw new FailRequestError('This build_url is not supported');
@@ -136,7 +132,7 @@ class IncrementalsPlugin {
     try {
       this.isValidUrl(buildUrl);
     } catch (buildUrlError) {
-      this.context.log.error('Malformed', { buildUrl: buildUrl, JENKINS_HOST: JENKINS_HOST });
+      this.context.log.error('Malformed', { buildUrl: buildUrl, JENKINS_HOST: config.JENKINS_HOST });
       throw buildUrlError;
     }
 
@@ -144,15 +140,15 @@ class IncrementalsPlugin {
     let perms = this.permissions.fetch();
 
     const jenkinsOpts = {};
-    if (JENKINS_AUTH) {
-      jenkinsOpts.headers = {'Authorization': 'Basic ' + new Buffer.from(JENKINS_AUTH, 'utf8').toString('base64')};
+    if (config.JENKINS_AUTH) {
+      jenkinsOpts.headers = {'Authorization': 'Basic ' + new Buffer.from(config.JENKINS_AUTH, 'utf8').toString('base64')};
     }
 
     /*
      * The first step is to take the buildUrl and fetch some metadata about this
      * specific Pipeline Run
      */
-    let buildMetadataUrl = process.env.BUILD_METADATA_URL || this.pipeline.getBuildApiUrl(buildUrl);
+    let buildMetadataUrl = config.BUILD_METADATA_URL || this.pipeline.getBuildApiUrl(buildUrl);
     this.context.log.info("Retrieving metadata", buildMetadataUrl)
     let buildMetadata = await this.fetch(buildMetadataUrl, jenkinsOpts);
     if (buildMetadata.status !== 200) {
@@ -168,10 +164,10 @@ class IncrementalsPlugin {
 
     if (!buildMetadataParsed.hash) {
       this.context.log.error('Unable to retrieve a hash or pullHash', buildMetadataJSON);
-      throw new SuccessRequestError(`Did not find a Git commit hash associated with this build. Some plugins on ${JENKINS_HOST} may not yet have been updated with JENKINS-50777 REST API enhancements. Skipping deployment.\n`)
+      throw new SuccessRequestError(`Did not find a Git commit hash associated with this build. Some plugins on ${config.JENKINS_HOST} may not yet have been updated with JENKINS-50777 REST API enhancements. Skipping deployment.\n`)
     }
 
-    let folderMetadata = await this.fetch(process.env.FOLDER_METADATA_URL || this.pipeline.getFolderApiUrl(buildUrl), jenkinsOpts);
+    let folderMetadata = await this.fetch(config.FOLDER_METADATA_URL || this.pipeline.getFolderApiUrl(buildUrl), jenkinsOpts);
     if (folderMetadata.status !== 200) {
       this.context.log.error('Failed to fetch Pipeline folder metadata', folderMetadata);
     }
@@ -196,7 +192,7 @@ class IncrementalsPlugin {
      * Once we have some data about the Pipeline, we can fetch the actual
      * `archive.zip` which has all the right data within it
      */
-    let archiveUrl = process.env.ARCHIVE_URL || this.pipeline.getArchiveUrl(buildUrl, buildMetadataParsed.hash);
+    let archiveUrl = config.ARCHIVE_URL || this.pipeline.getArchiveUrl(buildUrl, buildMetadataParsed.hash);
 
     const archivePath = await this.downloadFile(archiveUrl, jenkinsOpts)
     this.context.log.info('Downloaded', archiveUrl, archivePath);
@@ -234,7 +230,7 @@ class IncrementalsPlugin {
       throw new FailRequestError('No POM');
     }
     this.context.log.info('Found a POM', pom);
-    const pomURL = INCREMENTAL_URL + pom;
+    const pomURL = config.INCREMENTAL_URL + pom;
     const check = await this.fetch(pomURL);
     if (check.status === 200) {
       this.context.log.info('Already exists');

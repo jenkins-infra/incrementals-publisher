@@ -1,7 +1,9 @@
+const fetch = require('node-fetch');
 const express = require('express');
 const winston = require('winston');
 const expressWinston = require('express-winston');
 const bodyParser = require('body-parser')
+const config = require('./lib/config');
 const {IncrementalsPlugin} = require('./IncrementalsPlugin.js');
 
 const app = express()
@@ -31,6 +33,30 @@ app.use(bodyParser.urlencoded({ extended: false }))
 
 // parse application/json
 app.use(bodyParser.json())
+
+
+async function check_jenkins() {
+  const jenkinsOpts = {};
+  if (config.JENKINS_AUTH) {
+    jenkinsOpts.headers = {'Authorization': 'Basic ' + new Buffer.from(config.JENKINS_AUTH, 'utf8').toString('base64')};
+  }
+  const response = await fetch(config.JENKINS_HOST + '/whoAmI/api/json', jenkinsOpts)
+  if (response.status !== 200) {
+    throw new Error('Unable to talk to jenkins');
+  }
+  await response.json();
+  return { jenkins: 'ok' }
+}
+
+app.use('/healthcheck', require('express-healthcheck')({
+  test: async function (callback) {
+    (async function() {
+      const results = {};
+      Object.assign(results,config.JENKINS_AUTH ?  await check_jenkins() : { jenkins: 'no_auth' });
+      return results;
+    })().then(callback, callback);
+  }
+}));
 
 const asyncWrap = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(err => next(err));
 
