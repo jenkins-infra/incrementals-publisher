@@ -1,4 +1,5 @@
 const fetch = require('node-fetch');
+const bcrypt = require('bcrypt');
 const express = require('express');
 const winston = require('winston');
 const expressWinston = require('express-winston');
@@ -34,7 +35,6 @@ app.use(bodyParser.urlencoded({ extended: false }))
 // parse application/json
 app.use(bodyParser.json())
 
-
 async function check_jenkins() {
   const jenkinsOpts = {};
   if (config.JENKINS_AUTH) {
@@ -59,19 +59,21 @@ app.use('/healthcheck', require('express-healthcheck')({
 }));
 
 const asyncWrap = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(err => next(err));
+const encodedPassword = bcrypt.hashSync(config.PRESHARED_KEY, 10);
 
 app.post('/', asyncWrap(async (req, res) => {
-  const context = {
-    log: logger
-  };
-  //try {
+  const authorization = (req.get('Authorization') || '').replace(/^Bearer /, '');
+  // we bcrypt so nobody can learn from timing attacks
+  // https://www.npmjs.com/package/bcrypt#a-note-on-timing-attacks
+  const check = await bcrypt.compare(authorization, encodedPassword);
+  if (!check) {
+    res.status(403).send('Not authorized');
+    return
+  }
+
+  const context = { log: logger };
   const obj = new IncrementalsPlugin(context, { body: req.body });
   res.send((await obj.main()).body);
-  //} catch (e) {
-  //  res.status(context.res.status);
-  //  res.send(context.res.body);
-  //  throw err;
-  //}
 }))
 
 /* Logger after routing */

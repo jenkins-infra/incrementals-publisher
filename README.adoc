@@ -35,6 +35,9 @@ defaults to
 | `JENKINS_AUTH`
 | A `username:password` or `username:apiToken` authentication to Jenkins. link:https://ci.jenkins.io/me/configure[API Token]
 
+| `PRESHARED_KEY`
+| A string that is requried for Authorization: Bearer $token authentication to allow access 
+
 |===
 
 === Optional/Development Variables
