@@ -4,6 +4,7 @@ const express = require('express');
 const winston = require('winston');
 const expressWinston = require('express-winston');
 const bodyParser = require('body-parser')
+const helmet = require('helmet');
 const config = require('./lib/config');
 const {IncrementalsPlugin} = require('./IncrementalsPlugin.js');
 
@@ -29,6 +30,7 @@ const logger = winston.createLogger({
   exitOnError: false, // do not exit on handled exceptions
 });
 
+app.use(helmet());
 
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }))
