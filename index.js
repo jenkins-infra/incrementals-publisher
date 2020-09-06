@@ -55,7 +55,7 @@ const healthchecks = {
   }
 }
 
-app.use('/liveness', asyncWrap(async (req, res) => {
+app.use('/readyness', asyncWrap(async (req, res) => {
   res.status(200);
   let responseJson = { errors: [] };
   for (const key of Object.keys(healthchecks)) {
@@ -70,8 +70,11 @@ app.use('/liveness', asyncWrap(async (req, res) => {
   res.json(responseJson);
 }));
 
-app.use('/healthcheck', (req, res) => {
-  res.status(200).send('OK');
+app.use('/liveness', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    version: require('./package.json').version
+  });
 });
 
 const encodedPassword = bcrypt.hashSync(config.PRESHARED_KEY, 10);
