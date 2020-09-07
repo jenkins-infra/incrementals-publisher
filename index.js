@@ -55,7 +55,7 @@ const healthchecks = {
   }
 }
 
-app.use('/readyness', asyncWrap(async (req, res) => {
+app.use('/readiness', asyncWrap(async (req, res) => {
   res.status(200);
   let responseJson = { errors: [] };
   for (const key of Object.keys(healthchecks)) {
