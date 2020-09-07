@@ -10,6 +10,7 @@ const {IncrementalsPlugin} = require('./IncrementalsPlugin.js');
 
 const app = express()
 const port = process.env.PORT || 3000
+const asyncWrap = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(err => next(err));
 
 const logger = winston.createLogger({
   transports: [
@@ -37,30 +38,45 @@ app.use(bodyParser.urlencoded({ extended: false }))
 // parse application/json
 app.use(bodyParser.json())
 
-async function check_jenkins() {
-  const jenkinsOpts = {};
-  if (config.JENKINS_AUTH) {
+const healthchecks = {
+  jenkins: async function () {
+    const jenkinsOpts = {};
+    if (!config.JENKINS_AUTH) {
+      return { jenkins: 'no_auth' };
+    }
+
     jenkinsOpts.headers = {'Authorization': 'Basic ' + new Buffer.from(config.JENKINS_AUTH, 'utf8').toString('base64')};
+    const response = await fetch(config.JENKINS_HOST + '/whoAmI/api/json', jenkinsOpts)
+    if (response.status !== 200) {
+      throw new Error('Unable to talk to jenkins');
+    }
+    await response.json();
+    return { jenkins: 'ok' }
   }
-  const response = await fetch(config.JENKINS_HOST + '/whoAmI/api/json', jenkinsOpts)
-  if (response.status !== 200) {
-    throw new Error('Unable to talk to jenkins');
-  }
-  await response.json();
-  return { jenkins: 'ok' }
 }
 
-app.use('/healthcheck', require('express-healthcheck')({
-  test: async function (callback) {
-    (async function() {
-      const results = {};
-      Object.assign(results,config.JENKINS_AUTH ?  await check_jenkins() : { jenkins: 'no_auth' });
-      return results;
-    })().then(callback, callback);
+app.use('/readiness', asyncWrap(async (req, res) => {
+  res.status(200);
+  let responseJson = { errors: [] };
+  for (const key of Object.keys(healthchecks)) {
+    try {
+      responseJson = { ...responseJson, ...await healthchecks[key]() };
+    } catch (e) {
+      logger.error(`Healthcheck: ${e}`);
+      responseJson.errors.push(key);
+      res.status(500);
+    }
   }
+  res.json(responseJson);
 }));
 
-const asyncWrap = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(err => next(err));
+app.use('/liveness', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    version: require('./package.json').version
+  });
+});
+
 const encodedPassword = bcrypt.hashSync(config.PRESHARED_KEY, 10);
 
 app.post('/', asyncWrap(async (req, res) => {
