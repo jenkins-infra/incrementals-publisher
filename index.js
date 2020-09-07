@@ -5,30 +5,30 @@ const winston = require('winston');
 const expressWinston = require('express-winston');
 const bodyParser = require('body-parser')
 const helmet = require('helmet');
+const asyncWrap = require('express-async-wrap');
+
 const config = require('./lib/config');
 const {IncrementalsPlugin} = require('./IncrementalsPlugin.js');
 
 const app = express()
-const port = process.env.PORT || 3000
-const asyncWrap = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(err => next(err));
+const port = config.PORT
 
 const logger = winston.createLogger({
+  level: 'debug',
   transports: [
-    new winston.transports.Console({
-      level: 'debug',
-      handleExceptions: true,
-      json: false,
-      colorize: true,
-    })
+    new winston.transports.Console({ })
   ],
-  format: process.env.NODE_ENV === 'production' ? winston.format.combine(
-    winston.format.json()
-  ) : winston.format.combine(
+  format: process.env.NODE_ENV === 'production' ? winston.format.json() : winston.format.combine(
     winston.format.colorize(),
     winston.format.simple()
   ),
   exitOnError: false, // do not exit on handled exceptions
 });
+
+/* Logger after routing */
+app.use(expressWinston.logger({
+  winstonInstance: logger,
+}));
 
 app.use(helmet());
 
@@ -55,7 +55,7 @@ const healthchecks = {
   }
 }
 
-app.use('/readiness', asyncWrap(async (req, res) => {
+app.get('/readiness', asyncWrap(async (req, res) => {
   res.status(200);
   let responseJson = { errors: [] };
   for (const key of Object.keys(healthchecks)) {
@@ -70,12 +70,12 @@ app.use('/readiness', asyncWrap(async (req, res) => {
   res.json(responseJson);
 }));
 
-app.use('/liveness', (req, res) => {
+app.get('/liveness', asyncWrap(async (req, res) => {
   res.status(200).json({
     status: 'OK',
     version: require('./package.json').version
   });
-});
+}));
 
 const encodedPassword = bcrypt.hashSync(config.PRESHARED_KEY, 10);
 
@@ -94,16 +94,7 @@ app.post('/', asyncWrap(async (req, res) => {
   res.send((await obj.main()).body);
 }))
 
-/* Logger after routing */
-app.use(expressWinston.logger({
-  winstonInstance: logger,
-  meta: true, // optional: control whether you want to log the meta data about the request (default to true)
-  expressFormat: true, // Use the default Express/morgan request formatting. Enabling this will override any msg if true. Will only output colors with colorize set to true
-  colorize: false, // Color the text and status code, using the Express/morgan color palette (text: gray, status: default green, 3XX cyan, 4XX yellow, 5XX red).
-  ignoreRoute: function (req) { return req.url.startsWith('/healthcheck'); }
-}));
-
-/* ERROR HANDLER GOES HERE */
+/*Error handler goes last */
 app.use(function (err, req, res, next) {
   logger.error(err.stack)
   res.status(err.status || err.code || 400).send(err.message || 'Unknown error');
