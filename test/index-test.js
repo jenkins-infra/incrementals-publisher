@@ -147,7 +147,6 @@ describe('Handling incremental publisher webhook events', function() {
     it('should output an error', async function() {
       data.body.build_url = 'https://ci.jenkins.io/job/Tools/job/bom/job/PR-22/5/';
       await run();
-      console.log(ctx.res.body)
       assert.equal(ctx.res.body, 'Invalid archive retrieved from Jenkins, perhaps the plugin is not properly incrementalized?\nError: This is my error from https://ci.jenkins.io/job/Tools/job/bom/job/PR-22/5/artifact/**/*.55219da23b98/*.55219da23b98*/*zip*/archive.zip');
       assert.equal(ctx.res.status, 400);
     });
