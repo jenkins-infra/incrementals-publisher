@@ -72,7 +72,7 @@ class IncrementalsPlugin {
     return fetch(...args);
   }
 
-  async uploadToArtifactory(archivePath) {
+  async uploadToArtifactory(archivePath, pomURL) {
     const upload = await this.fetch(util.format('%sarchive.zip', config.INCREMENTAL_URL),
       {
         headers: {
@@ -83,14 +83,14 @@ class IncrementalsPlugin {
         method: 'PUT',
         body: fs.createReadStream(archivePath)
       });
-    this.context.log.info('Upload status', upload.status, await upload.text());
+    this.context.log.info('Upload result for pom: %s, status: %s, full error: %s', pomURL, upload.status, await upload.text());
     return upload;
   }
 
 
   async downloadFile(archiveUrl, fetchOpts) {
     let tmpDir = await mkdtemp(TEMP_ARCHIVE_DIR);
-    this.context.log.info('Prepared a temp dir for the archive', tmpDir);
+    this.context.log.info('Prepared a temp dir for the archive %s', tmpDir);
     const archivePath = path.join(tmpDir, 'archive.zip');
 
     const res = await fetch(archiveUrl, fetchOpts)
@@ -149,7 +149,7 @@ class IncrementalsPlugin {
      * specific Pipeline Run
      */
     let buildMetadataUrl = config.BUILD_METADATA_URL || this.pipeline.getBuildApiUrl(buildUrl);
-    this.context.log.info("Retrieving metadata", buildMetadataUrl)
+    this.context.log.info("Retrieving metadata from %s", buildMetadataUrl)
     let buildMetadata = await this.fetch(buildMetadataUrl, jenkinsOpts);
     if (buildMetadata.status !== 200) {
       this.context.log.error('Failed to fetch Pipeline build metadata', buildMetadata);
@@ -186,7 +186,7 @@ class IncrementalsPlugin {
       this.context.log.error('This request was using a commit which does not exist, or was ambiguous, on GitHub!', buildMetadataParsed.hash);
       throw new FailRequestError('Could not find commit (non-existent or ambiguous)');
     }
-    this.context.log.info('Metadata loaded', folderMetadataParsed.owner, folderMetadataParsed.repo, buildMetadataParsed.hash);
+    this.context.log.info('Metadata loaded repo: %s/%s hash: %s', folderMetadataParsed.owner, folderMetadataParsed.repo, buildMetadataParsed.hash);
 
     /*
      * Once we have some data about the Pipeline, we can fetch the actual
@@ -195,7 +195,7 @@ class IncrementalsPlugin {
     let archiveUrl = config.ARCHIVE_URL || this.pipeline.getArchiveUrl(buildUrl, buildMetadataParsed.hash);
 
     const archivePath = await this.downloadFile(archiveUrl, jenkinsOpts)
-    this.context.log.info('Downloaded', archiveUrl, archivePath);
+    this.context.log.info('Downloaded archiveURL: %s to path: %s', archiveUrl, archivePath);
 
 
     /*
@@ -204,17 +204,16 @@ class IncrementalsPlugin {
      */
     perms = await perms;
     if (perms.status !== 200) {
-      this.context.log.error('Failed to get our permissions', perms);
+      this.context.log.error('Failed to get our permissions %o', perms);
       throw new FailRequestError('Failed to retrieve permissions');
     }
     const repoPath = util.format('%s/%s', folderMetadataParsed.owner, folderMetadataParsed.repo);
     let entries = [];
-    this.context.log.info('Downloaded file size', fs.statSync(archivePath).size);
+    this.context.log.info('Downloaded file size %d', fs.statSync(archivePath).size);
     try {
       await this.permissions.verify(this.context.log, repoPath, archivePath, entries, perms, buildMetadataParsed.hash);
     } catch (err) {
-      this.context.log.error('Invalid archive');
-      this.context.log.error(err);
+      this.context.log.error('Invalid archive %o', err);
       throw new FailRequestError(`Invalid archive retrieved from Jenkins, perhaps the plugin is not properly incrementalized?\n${err} from ${archiveUrl}`);
     }
 
@@ -222,31 +221,35 @@ class IncrementalsPlugin {
       this.context.log.error('Empty archive');
       throw new SuccessRequestError(`Skipping deployment as no artifacts were found with the expected path, typically due to a PR merge build not up to date with its base branch: ${archiveUrl}\n`)
     }
-    this.context.log.info('Archive entries', entries);
+    this.context.log.info('Archive entries %o', entries);
 
     const pom = entries.find(entry => entry.endsWith('.pom'));
     if (!pom) {
       this.context.log.error('No POM');
       throw new FailRequestError('No POM');
     }
-    this.context.log.info('Found a POM', pom);
+    this.context.log.info('Found a POM %s', pom);
     const pomURL = config.INCREMENTAL_URL + pom;
     const check = await this.fetch(pomURL);
     if (check.status === 200) {
-      this.context.log.info('Already exists');
+      this.context.log.info('Already exists for pom: %s', pomURL);
       throw new SuccessRequestError(`Already deployed, not attempting to redeploy: ${pomURL}\n`)
     }
 
     /*
      * Finally, we can upload to Artifactory
      */
-    const upload = await this.uploadToArtifactory(archivePath, folderMetadataParsed, buildMetadataParsed, pomURL);
-    this.context.log.info('Tried to create Artifactory status', upload);
+    const upload = await this.uploadToArtifactory(archivePath, pomURL);
 
     const result = await this.github.createStatus(folderMetadataParsed.owner, folderMetadataParsed.repo, buildMetadataParsed.hash, pomURL.replace(/[^/]+$/, ''))
       // ignore any actual errors, just log it
       .catch(err => err);
-    this.context.log.info('Tried to create github status', result);
+    
+    if (result.status >= 300) {
+      this.context.log.error('Failed to create github status, code: %d for repo: %s/%s, check your GitHub credentials', result.status, folderMetadataParsed.owner, folderMetadataParsed.repo);
+    } else {
+      this.context.log.info('Created github status for pom: %s', pom);
+    }
 
     return {
       status: upload.status,

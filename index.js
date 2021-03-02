@@ -18,9 +18,11 @@ const logger = winston.createLogger({
   transports: [
     new winston.transports.Console({ })
   ],
-  format: process.env.NODE_ENV === 'production' ? winston.format.json() : winston.format.combine(
-    winston.format.colorize(),
-    winston.format.simple()
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.align(),
+    winston.format.splat(),
+    winston.format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`)
   ),
   exitOnError: false, // do not exit on handled exceptions
 });
