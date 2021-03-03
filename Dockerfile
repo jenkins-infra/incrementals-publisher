@@ -1,4 +1,15 @@
 FROM node:14
+ENV NODE_ENV development
+
+COPY package*.json ./
+
+RUN npm install
+
+COPY . .
+
+RUN npm run test
+
+FROM node:14
 
 ENV NODE_ENV production
 ENV PORT 3000
