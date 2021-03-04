@@ -12,6 +12,9 @@ if (JENKINS_URL.contains('ci.jenkins.io')) {
   node('docker&&linux') {
     timeout(60) {
       ansiColor('xterm') {
+        stage('Checkout source') {
+          checkout scm
+        }
         stage('NPM Install') {
           runDockerCommand('node:14',  'npm ci')
         }
