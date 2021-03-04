@@ -4,27 +4,18 @@ if (JENKINS_URL.contains('infra.ci.jenkins.io')) {
 }
 
 if (JENKINS_URL.contains('ci.jenkins.io')) {
-  pipeline {
-    agent {
-      label 'docker&&linux'
-    }
-
-    options {
-      timeout(time: 60, unit: 'MINUTES')
-      ansiColor('xterm')
-      buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '5', numToKeepStr: '5')
-    }
-
-    stages {
-
-      stage('NPM Install') {
-        steps {
+  properties([
+      buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '5')),
+      disableConcurrentBuilds(),
+      disableResume()
+  ])
+  node('docker&&linux') {
+    timeout(60) {
+      ansiColor('xterm') {
+        stage('NPM Install') {
           runDockerCommand('node:14',  'npm ci')
         }
-      }
-
-      stage('Lint and Test') {
-        steps {
+        stage('Lint and Test') {
           runDockerCommand('node:14',  'npm run test')
         }
       }
