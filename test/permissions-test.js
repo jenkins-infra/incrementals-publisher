@@ -33,13 +33,43 @@ describe('The Permissions helpers', function() {
       }
     )
   })
+  it('Fails with no permissions error', async function() {
+    const folderMetadataParsed = {
+      owner: 'jenkinsci',
+      repo: 'bom'
+    }
+    const buildMetadataParsed = {
+      hash: '5055257e4d28adea76fc34fdde4e025347405bae'
+    }
+
+    const repoPath = path.join(folderMetadataParsed.owner, folderMetadataParsed.repo);
+    const entries = [];
+    let perms = {
+      status: 200,
+      json: () => require('./fixtures-permissions-missing-path.json')
+    }
+    assert.rejects(
+      () =>  Permissions.verify(
+        { info: () => true },
+        repoPath,
+        path.resolve('./test/fixtures-good-archive.zip'),
+        entries,
+        perms,
+        buildMetadataParsed.hash
+      ),
+      {
+        name: 'Error',
+        message: 'ZIP error: Error: No permissions for io/jenkins/tools/bom/bom-2.222.x/29-rc793.5055257e4d28/bom-2.222.x-29-rc793.5055257e4d28.pom'
+      }
+    )
+  })
   it('Succeeds with good pom', async function() {
     const folderMetadataParsed = {
       owner: 'jenkinsci',
       repo: 'bom'
     }
     const buildMetadataParsed = {
-      hash: '55219da23b98739fa6b793b21b91555b36162856'
+      hash: '5055257e4d28adea76fc34fdde4e025347405bae'
     }
 
     const repoPath = path.join(folderMetadataParsed.owner, folderMetadataParsed.repo);
@@ -47,6 +77,31 @@ describe('The Permissions helpers', function() {
     let perms = {
       status: 200,
       json: () => require('./fixtures-permissions.json')
+    };
+    const response = await Permissions.verify(
+      { info: () => true },
+      repoPath,
+      path.resolve('./test/fixtures-good-archive.zip'),
+      entries,
+      perms,
+      buildMetadataParsed.hash
+    );
+    assert.equal(response, true)
+  })
+  it('Succeeds with wildcard path', async function() {
+    const folderMetadataParsed = {
+      owner: 'jenkinsci',
+      repo: 'bom'
+    }
+    const buildMetadataParsed = {
+      hash: '5055257e4d28adea76fc34fdde4e025347405bae'
+    }
+
+    const repoPath = path.join(folderMetadataParsed.owner, folderMetadataParsed.repo);
+    const entries = [];
+    let perms = {
+      status: 200,
+      json: () => require('./fixtures-permissions-wildcard.json')
     };
     const response = await Permissions.verify(
       { info: () => true },
