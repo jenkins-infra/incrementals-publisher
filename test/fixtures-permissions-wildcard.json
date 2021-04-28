@@ -1,0 +1,5 @@
+{
+    "jenkinsci/bom": [
+        "io/jenkins/tools/bom/bom-*"
+    ]
+}

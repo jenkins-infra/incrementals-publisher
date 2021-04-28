@@ -7,7 +7,7 @@ const {IncrementalsPlugin} = require('../IncrementalsPlugin.js');
 const permissions = require('../lib/permissions');
 
 const urlResults = {
-  'https://repo.jenkins-ci.org/incrementals/io/jenkins/tools/bom/bom/2.176.1-rc63.55219da23b98/bom-2.176.1-rc63.55219da23b98.pom': {
+  'https://repo.jenkins-ci.org/incrementals/io/jenkins/tools/bom/bom-2.222.x/29-rc793.5055257e4d28/bom-2.222.x-29-rc793.5055257e4d28.pom': {
     status: 404
   },
   'https://ci.jenkins.io/job/Tools/job/bom/job/PR-22/5/api/json?tree=actions[revision[hash,pullHash]]': {
@@ -18,7 +18,7 @@ const urlResults = {
           "_class": "jenkins.scm.api.SCMRevisionAction",
           "revision": {
             "_class": "org.jenkinsci.plugins.github_branch_source.PullRequestSCMRevision",
-            "pullHash": "55219da23b98739fa6b793b21b91555b36162856"
+            "pullHash": "5055257e4d28adea76fc34fdde4e025347405bae"
           }
         }]
       }
@@ -34,7 +34,7 @@ const urlResults = {
     status: 200,
     results: () => require('./fixtures-permissions.json')
   },
-  'https://fake-repo.jenkins-ci.org/incrementals/io/jenkins/tools/bom/bom/2.176.1-rc63.55219da23b98/bom-2.176.1-rc63.55219da23b98.pom': {
+  'https://fake-repo.jenkins-ci.org/incrementals/io/jenkins/tools/bom/bom-2.222.x/29-rc793.5055257e4d28/bom-2.222.x-29-rc793.5055257e4d28.pom': {
     status: 404,
     results: () => 'Not found'
   }
@@ -147,7 +147,7 @@ describe('Handling incremental publisher webhook events', function() {
     it('should output an error', async function() {
       data.body.build_url = 'https://ci.jenkins.io/job/Tools/job/bom/job/PR-22/5/';
       await run();
-      assert.equal(ctx.res.body, 'Invalid archive retrieved from Jenkins, perhaps the plugin is not properly incrementalized?\nError: This is my error from https://ci.jenkins.io/job/Tools/job/bom/job/PR-22/5/artifact/**/*55219da23b98*/*55219da23b98*/*zip*/archive.zip');
+      assert.equal(ctx.res.body, 'Invalid archive retrieved from Jenkins, perhaps the plugin is not properly incrementalized?\nError: This is my error from https://ci.jenkins.io/job/Tools/job/bom/job/PR-22/5/artifact/**/*5055257e4d28*/*5055257e4d28*/*zip*/archive.zip');
       assert.equal(ctx.res.status, 400);
     });
   });

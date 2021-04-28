@@ -1,6 +1,6 @@
 {
   "name": "incrementals-publisher",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "",
   "private": true,
   "main": "index.js",
@@ -33,8 +33,9 @@
     "express-async-wrap": "^1.0.0",
     "express-winston": "^4.0.5",
     "helmet": "^4.1.0",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.1",
     "node-stream-zip": "^1.11.3",
+    "wildcard-match": "^5.1.0",
     "winston": "^3.3.3",
     "xml2js": "^0.4.23"
   }
