@@ -34,7 +34,7 @@ def runDockerCommand(image, cmd) {
       -w "\$PWD" \
       -v "\$PWD:\$PWD" \
       -u \$(id -u):\$(id -g) \
-      -e "HOME=$WORKSPACE" \
+      -e \"HOME=$WORKSPACE\" \
       $image \
       $cmd
   """
