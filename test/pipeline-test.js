@@ -154,8 +154,7 @@ describe('The Pipeline helpers', () => {
     it('should generate an archive.zip URL', () => {
       let hash = 'acbd4';
       const url = pipeline.getArchiveUrl(build_url, hash);
-      assert.ok(url);
-      assert.ok(url.match('archive.zip$'));
+      assert.strictEqual(url, 'https://ci.jenkins.io/job/structs-plugin/job/PR-36/3/artifact/**/*a*cb*d4*/*a*cb*d4*/*zip*/archive.zip');
     });
   });
 
