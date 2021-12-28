@@ -1,3 +1,4 @@
+/* eslint-disable mocha/no-mocha-arrows */
 const assert   = require('assert');
 const pipeline = require('../lib/pipeline.js');
 
@@ -156,6 +157,7 @@ describe('The Pipeline helpers', () => {
       const url = pipeline.getArchiveUrl(build_url, hash);
       assert.ok(url);
       assert.ok(url.match('archive.zip$'));
+      assert.ok(url.includes('a*cb*d4'), url); // https://github.com/jenkins-infra/jenkins.io/issues/4783
     });
   });
 
