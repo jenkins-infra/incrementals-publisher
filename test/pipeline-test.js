@@ -1,4 +1,3 @@
-/* eslint-disable mocha/no-mocha-arrows */
 const assert   = require('assert');
 const pipeline = require('../lib/pipeline.js');
 
