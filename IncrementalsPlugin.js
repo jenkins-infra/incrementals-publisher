@@ -223,11 +223,7 @@ class IncrementalsPlugin {
     }
     this.context.log.info('Archive entries %o', entries);
 
-    const pom = entries.find(entry => entry.endsWith('.pom'));
-    if (!pom) {
-      this.context.log.error('No POM');
-      throw new FailRequestError('No POM');
-    }
+    const pom = entries[0].path;
     this.context.log.info('Found a POM %s', pom);
     const pomURL = config.INCREMENTAL_URL + pom;
     const check = await this.fetch(pomURL);
@@ -241,12 +237,19 @@ class IncrementalsPlugin {
      */
     const upload = await this.uploadToArtifactory(archivePath, pomURL);
 
-    const result = await this.github.createStatus(folderMetadataParsed.owner, folderMetadataParsed.repo, buildMetadataParsed.hash, pomURL.replace(/[^/]+$/, ''))
+    const entriesForDisplay = entries.map(entry => {
+      return {
+        artifactId: entry.artifactId,
+        url: config.INCREMENTAL_URL + entry.path.replace(/[^/]+$/, '')
+      };
+    })
+
+    const result = await this.github.createStatus(folderMetadataParsed.owner, folderMetadataParsed.repo, buildMetadataParsed.hash, entriesForDisplay)
       // ignore any actual errors, just log it
       .catch(err => err);
     
     if (result.status >= 300) {
-      this.context.log.error('Failed to create github status, code: %d for repo: %s/%s, check your GitHub credentials', result.status, folderMetadataParsed.owner, folderMetadataParsed.repo);
+      this.context.log.error('Failed to create github status, code: %d for repo: %s/%s, check your GitHub credentials, err: %s', result.status, folderMetadataParsed.owner, folderMetadataParsed.repo, result);
     } else {
       this.context.log.info('Created github status for pom: %s', pom);
     }

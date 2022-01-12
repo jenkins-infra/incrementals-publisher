@@ -16,10 +16,10 @@ if (JENKINS_URL.contains('ci.jenkins.io')) {
           checkout scm
         }
         stage('NPM Install') {
-          runDockerCommand('node:14',  'npm ci')
+          runDockerCommand('node:16',  'npm ci')
         }
         stage('Lint and Test') {
-          runDockerCommand('node:14',  'npm run test')
+          runDockerCommand('node:16',  'npm run test')
         }
       }
     }

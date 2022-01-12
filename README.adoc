@@ -1,7 +1,7 @@
 = Incremental Build Publisher
 
 
-This Azure Function is responsible for bouncing incrementally built (see
+This service is responsible for uploading incrementally built (see
 link:https://github.com/jenkinsci/jep/tree/master/jep/305[JEP-305]) core and
 plugin artifacts into the incrementals Maven repository (see
 link:https://github.com/jenkins-infra/iep/tree/master/iep-009[IEP-9]).
@@ -57,7 +57,7 @@ defaults to
 
 == Valid Requests
 
-This Function only supports one kind of request, and is expected to only be
+This service only supports one kind of request, and is expected to only be
 called by the `buildPlugin()` step or other Jenkins Pipelines which are
 publishing incrementally built artifacts into Artifactory.
 
@@ -71,8 +71,6 @@ publishing incrementally built artifacts into Artifactory.
 This URL is expected to be the value of a `BUILD_URL` environment variable from
 Jenkins.
 
-
-
 == Testing
 
 Unit tests can simply be run by executing `make check` in this directory.
@@ -85,5 +83,5 @@ Function, for example:
 
 [source,bash]
 ----
-curl -i -d '{"build_url":"http://localhost:8080/job/dumb/3/"}' http://localhost:7071/api/incrementals-publisher
+curl -H "Authorization: Bearer ${PRESHARED_KEY}" -H 'Content-Type: application/json' -i -d '{"build_url":"https://ci.jenkins.io/job/Plugins/job/jenkins-infra-test-plugin/job/master/52/"}' http://localhost:3000
 ----
