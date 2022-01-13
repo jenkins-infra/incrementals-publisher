@@ -13,8 +13,14 @@ link:https://github.com/jenkins-infra/iep/tree/master/iep-009[IEP-9]).
 |===
 | Variable | Description
 
-| `GITHUB_TOKEN`
-| A GitHub OAuth/Personal Access Token which can be used for GitHub API queries, ideally also has access to set the `repo.status` permission.
+| `GITHUB_APP_ID`
+| The App ID for a GitHub app
+
+| `GITHUB_APP_PRIVATE_KEY`
+| The private key for a GitHub app
+
+| `GITHUB_APP_INSTALLATION_ID`
+| The installation ID for the organisation / user account that the GitHub app has been installed to
 
 | `JENKINS_HOST`
 | A Jenkins instance (defaults to `https://ci.jenkins.io/`) to which URLs are
