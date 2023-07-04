@@ -5,3 +5,17 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    labels:
+    - chore
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+    - dependencies
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: weekly
+    labels:
+    - dependencies
