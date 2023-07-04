@@ -35,7 +35,7 @@
     "express-async-wrap": "^1.0.0",
     "express-winston": "^4.0.5",
     "helmet": "^4.1.0",
-    "node-fetch": "^2.6.1",
+    "node-fetch": "^3.3.1",
     "node-stream-zip": "^1.11.3",
     "wildcard-match": "^5.1.0",
     "winston": "^3.9.0",
