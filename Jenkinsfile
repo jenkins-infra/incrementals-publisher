@@ -1,5 +1,5 @@
 if (JENKINS_URL.contains('infra.ci.jenkins.io')) {
-  buildDockerAndPublishImage('incrementals-publisher')
+  buildDockerAndPublishImage('incrementals-publisher', [automaticSemanticVersioning: true])
   return
 }
 
