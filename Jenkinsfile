@@ -67,14 +67,8 @@ pipeline {
 
     stage('Release') {
       when {
-        allOf {
-          anyOf {
-            branch "main"
-            branch "beta"
-          }
-          // Only deploy to production from infra.ci.jenkins.io
-          expression { infra.isInfra() }
-        }
+        // Only deploy to production from infra.ci.jenkins.io
+        expression { infra.isInfra() }
       }
       steps {
         buildDockerAndPublishImage('incrementals-publisher', [automaticSemanticVersioning: true])
