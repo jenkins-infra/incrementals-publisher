@@ -3,8 +3,10 @@
   "version": "1.4.2",
   "description": "",
   "private": true,
+  "type": "module",
   "main": "index.js",
   "scripts": {
+    "lint": "eslint .",
     "dev": "nodemon index.js",
     "test": "mocha -R mocha-multi-reporters"
   },
@@ -19,7 +21,10 @@
   },
   "homepage": "https://github.com/jenkins-infra/community-functions#readme",
   "devDependencies": {
+    "@babel/core": "^7.22.6",
+    "@babel/eslint-parser": "^7.22.6",
     "eslint": "^8.44.0",
+    "eslint-plugin-import": "^2.27.5",
     "eslint-plugin-mocha": "^10.1.0",
     "mocha": "^10.2.0",
     "mocha-multi-reporters": "^1.1.7",
@@ -27,6 +32,7 @@
     "simple-mock": "^0.8.0"
   },
   "dependencies": {
+    "@babel/preset-env": "^7.22.6",
     "@octokit/auth-app": "^5.0.6",
     "@octokit/rest": "^19.0.13",
     "bcrypt": "^5.1.0",

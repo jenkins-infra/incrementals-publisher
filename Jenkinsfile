@@ -1,41 +1,84 @@
-if (JENKINS_URL.contains('infra.ci.jenkins.io')) {
-  buildDockerAndPublishImage('incrementals-publisher', [automaticSemanticVersioning: true])
-  return
-}
+pipeline {
+  options {
+    timeout(time: 60, unit: 'MINUTES')
+    ansiColor('xterm')
+    disableConcurrentBuilds(abortPrevious: true)
+    buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '5')
+  }
 
-if (JENKINS_URL.contains('ci.jenkins.io')) {
-  properties([
-      buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '5')),
-      disableConcurrentBuilds(),
-      disableResume()
-  ])
-  node('docker&&linux') {
-    timeout(60) {
-      ansiColor('xterm') {
-        stage('Checkout source') {
-          checkout scm
-        }
-        stage('NPM Install') {
-          runDockerCommand('node:18',  'npm ci')
-        }
-        stage('Lint and Test') {
-          runDockerCommand('node:18',  'npm run test')
+  agent {
+    label 'node'
+  }
+
+  environment {
+    NODE_ENV = 'production'
+    TZ = "UTC"
+    NETLIFY = "true"
+  }
+
+  stages {
+    stage('Check for typos') {
+      steps {
+        sh '''typos --format json | typos-checkstyle - > checkstyle.xml || true'''
+      }
+      post {
+        always {
+          recordIssues(tools: [checkStyle(id: 'typos', name: 'Typos', pattern: 'checkstyle.xml')])
         }
       }
     }
-  }
-}
 
-def runDockerCommand(image, cmd) {
-  sh """
-    docker run \
-      --network host \
-      --rm \
-      -w "\$PWD" \
-      -v "\$PWD:\$PWD" \
-      -u \$(id -u):\$(id -g) \
-      -e \"HOME=$WORKSPACE\" \
-      $image \
-      $cmd
-  """
+    stage('Install Dependencies') {
+      environment {
+        NODE_ENV = 'development'
+      }
+      steps {
+        sh 'asdf install'
+        sh 'npm ci'
+      }
+    }
+
+    stage('Lint') {
+      steps {
+        sh '''
+          npx eslint --format checkstyle . > eslint-results.json
+        '''
+      }
+      post {
+        always {
+          recordIssues(tools: [
+              esLint(pattern: 'eslint-results.json'),
+          ])
+        }
+      }
+    }
+
+    stage('Test') {
+      steps {
+        sh 'npm run test --if-present'
+      }
+    }
+
+    stage('Build') {
+      steps {
+        sh 'npm run build --if-present'
+      }
+    }
+
+    stage('Release') {
+      when {
+        allOf {
+          anyOf {
+            branch "main"
+            branch "beta"
+          }
+          // Only deploy to production from infra.ci.jenkins.io
+          expression { infra.isInfra() }
+        }
+      }
+      steps {
+        buildDockerAndPublishImage('incrementals-publisher', [automaticSemanticVersioning: true])
+      }
+    }
+  }
 }

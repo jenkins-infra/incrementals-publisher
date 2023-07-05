@@ -42,7 +42,7 @@ defaults to
 | A `username:password` or `username:apiToken` authentication to Jenkins. link:https://ci.jenkins.io/me/configure[API Token]
 
 | `PRESHARED_KEY`
-| A string that is requried for Authorization: Bearer $token authentication to allow access 
+| A string that is required for Authorization: Bearer $token authentication to allow access 
 
 |===
 
