@@ -1,22 +1,24 @@
-const fetch = require('node-fetch');
-const bcrypt = require('bcrypt');
-const express = require('express');
-const winston = require('winston');
-const expressWinston = require('express-winston');
-const bodyParser = require('body-parser')
-const helmet = require('helmet');
-const asyncWrap = require('express-async-wrap');
+import {readFile} from "fs/promises";
+import fetch from "node-fetch";
+import bcrypt from "bcrypt";
+import express from "express";
+import winston from "winston";
+import expressWinston from "express-winston";
+import bodyParser from "body-parser";
+import helmet from "helmet";
+import asyncWrap from "express-async-wrap";
+import config from "./lib/config.js";
+import {IncrementalsPlugin} from "./IncrementalsPlugin.js";
 
-const config = require('./lib/config');
-const {IncrementalsPlugin} = require('./IncrementalsPlugin.js');
+const packageJson = JSON.parse(await readFile(new URL("./package.json", import.meta.url)));
 
 const app = express()
 const port = config.PORT
 
 const logger = winston.createLogger({
-  level: 'debug',
+  level: "debug",
   transports: [
-    new winston.transports.Console({ })
+    new winston.transports.Console({})
   ],
   format: winston.format.combine(
     winston.format.timestamp(),
@@ -35,7 +37,7 @@ app.use(expressWinston.logger({
 app.use(helmet());
 
 // parse application/x-www-form-urlencoded
-app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.urlencoded({extended: false}))
 
 // parse application/json
 app.use(bodyParser.json())
@@ -44,25 +46,25 @@ const healthchecks = {
   jenkins: async function () {
     const jenkinsOpts = {};
     if (!config.JENKINS_AUTH) {
-      return { jenkins: 'no_auth' };
+      return {jenkins: "no_auth"};
     }
 
-    jenkinsOpts.headers = {'Authorization': 'Basic ' + new Buffer.from(config.JENKINS_AUTH, 'utf8').toString('base64')};
-    const response = await fetch(config.JENKINS_HOST + '/whoAmI/api/json', jenkinsOpts)
+    jenkinsOpts.headers = {"Authorization": "Basic " + new Buffer.from(config.JENKINS_AUTH, "utf8").toString("base64")};
+    const response = await fetch(config.JENKINS_HOST + "/whoAmI/api/json", jenkinsOpts)
     if (response.status !== 200) {
-      throw new Error('Unable to talk to jenkins');
+      throw new Error("Unable to talk to jenkins");
     }
     await response.json();
-    return { jenkins: 'ok' }
+    return {jenkins: "ok"}
   }
 }
 
-app.get('/readiness', asyncWrap(async (req, res) => {
+app.get("/readiness", asyncWrap(async (req, res) => {
   res.status(200);
-  let responseJson = { errors: [] };
+  let responseJson = {errors: []};
   for (const key of Object.keys(healthchecks)) {
     try {
-      responseJson = { ...responseJson, ...await healthchecks[key]() };
+      responseJson = {...responseJson, ...(await healthchecks[key]())};
     } catch (e) {
       logger.error(`Healthcheck: ${e}`);
       responseJson.errors.push(key);
@@ -72,43 +74,43 @@ app.get('/readiness', asyncWrap(async (req, res) => {
   res.json(responseJson);
 }));
 
-app.get('/liveness', asyncWrap(async (req, res) => {
+app.get("/liveness", asyncWrap(async (_req, res) => {
   res.status(200).json({
-    status: 'OK',
-    version: require('./package.json').version
+    status: "OK",
+    version: packageJson.version
   });
 }));
 
 const encodedPassword = bcrypt.hashSync(config.PRESHARED_KEY, 10);
 
-app.post('/', asyncWrap(async (req, res) => {
-  const authorization = (req.get('Authorization') || '').replace(/^Bearer /, '');
+app.post("/", asyncWrap(async (req, res) => {
+  const authorization = (req.get("Authorization") || "").replace(/^Bearer /, "");
   // we bcrypt so nobody can learn from timing attacks
   // https://www.npmjs.com/package/bcrypt#a-note-on-timing-attacks
   const check = await bcrypt.compare(authorization, encodedPassword);
   if (!check) {
-    res.status(403).send('Not authorized');
+    res.status(403).send("Not authorized");
     return
   }
 
-  const context = { log: logger };
-  const obj = new IncrementalsPlugin(context, { body: req.body });
+  const context = {log: logger};
+  const obj = new IncrementalsPlugin(context, {body: req.body});
   res.send((await obj.main()).body);
 }))
 
 /*Error handler goes last */
 app.use(function (err, req, res, next) {
   logger.error(err.stack)
-  res.status(err.status || err.code || 400).send(err.message || 'Unknown error');
+  res.status(err.status || err.code || 400).send(err.message || "Unknown error");
   next()
 })
 
 // Handle ^C
-process.on('SIGINT', shutdown);
+process.on("SIGINT", shutdown);
 
 // Do graceful shutdown
 function shutdown() {
-  logger.info('Got SIGINT');
+  logger.info("Got SIGINT");
   process.exit();
 }
 

@@ -4,38 +4,73 @@ if (JENKINS_URL.contains('infra.ci.jenkins.io')) {
 }
 
 if (JENKINS_URL.contains('ci.jenkins.io')) {
-  properties([
-      buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '5')),
-      disableConcurrentBuilds(),
-      disableResume()
-  ])
-  node('docker&&linux') {
-    timeout(60) {
-      ansiColor('xterm') {
-        stage('Checkout source') {
-          checkout scm
+  pipeline {
+    options {
+      timeout(time: 60, unit: 'MINUTES')
+      ansiColor('xterm')
+      disableConcurrentBuilds(abortPrevious: true)
+      buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '5')
+    }
+
+    agent {
+      label 'node'
+    }
+
+    environment {
+      NODE_ENV = 'production'
+      TZ = "UTC"
+      NETLIFY = "true"
+      HOME = "${WORKSPACE}"
+    }
+
+    stages {
+      stage('Check for typos') {
+        steps {
+          sh '''typos --format json | typos-checkstyle - > checkstyle.xml || true'''
         }
-        stage('NPM Install') {
-          runDockerCommand('node:18',  'npm ci')
+        post {
+          always {
+            recordIssues(tools: [checkStyle(id: 'typos', name: 'Typos', pattern: 'checkstyle.xml')])
+          }
         }
-        stage('Lint and Test') {
-          runDockerCommand('node:18',  'npm run test')
+      }
+
+      stage('Install Dependencies') {
+        environment {
+          NODE_ENV = 'development'
+        }
+        steps {
+          sh 'asdf install'
+          sh 'npm ci'
+        }
+      }
+
+      stage('Lint') {
+        steps {
+          sh '''
+            npx eslint --format checkstyle . > eslint-results.json
+          '''
+        }
+        post {
+          always {
+            recordIssues(tools: [
+                esLint(pattern: 'eslint-results.json'),
+            ])
+          }
+        }
+      }
+
+      stage('Test') {
+        steps {
+          sh 'npm run test --if-present'
+        }
+      }
+
+      stage('Build') {
+        steps {
+          sh 'npm run build --if-present'
         }
       }
     }
   }
-}
-
-def runDockerCommand(image, cmd) {
-  sh """
-    docker run \
-      --network host \
-      --rm \
-      -w "\$PWD" \
-      -v "\$PWD:\$PWD" \
-      -u \$(id -u):\$(id -g) \
-      -e \"HOME=$WORKSPACE\" \
-      $image \
-      $cmd
-  """
 }
