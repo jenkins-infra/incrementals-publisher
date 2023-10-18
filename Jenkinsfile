@@ -71,7 +71,7 @@ pipeline {
         expression { infra.isInfra() }
       }
       steps {
-        buildDockerAndPublishImage('incrementals-publisher', [automaticSemanticVersioning: true, buildDockerConfig: [targetplatforms: 'linux/amd64,linux/arm64']])
+        buildDockerAndPublishImage('incrementals-publisher', [automaticSemanticVersioning: true, targetplatforms: 'linux/amd64,linux/arm64'])
       }
     }
   }
