@@ -244,7 +244,9 @@ class IncrementalsPlugin {
       };
     })
 
-    const result = await this.github.createStatus(folderMetadataParsed.owner, folderMetadataParsed.repo, buildMetadataParsed.hash, entriesForDisplay)
+    const version = pom.split("/").slice(-2)[0]
+
+    const result = await this.github.createStatus(folderMetadataParsed.owner, folderMetadataParsed.repo, buildMetadataParsed.hash, version, entriesForDisplay)
       // ignore any actual errors, just log it
       .catch(err => err);
 
