@@ -240,13 +240,13 @@ class IncrementalsPlugin {
     const entriesForDisplay = entries.map(entry => {
       return {
         artifactId: entry.artifactId,
-        url: config.INCREMENTAL_URL + entry.path.replace(/[^/]+$/, "")
+        url: config.INCREMENTAL_URL + entry.path.replace(/[^/]+$/, ""),
+        version: entry.path.split("/").slice(-2)[0],
+        groupId: entry.path.split("/").slice(0, 3).join(".")
       };
     })
 
-    const version = pom.split("/").slice(-2)[0]
-
-    const result = await this.github.createStatus(folderMetadataParsed.owner, folderMetadataParsed.repo, buildMetadataParsed.hash, version, entriesForDisplay)
+    const result = await this.github.createStatus(folderMetadataParsed.owner, folderMetadataParsed.repo, buildMetadataParsed.hash, entriesForDisplay)
       // ignore any actual errors, just log it
       .catch(err => err);
 
