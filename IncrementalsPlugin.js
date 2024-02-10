@@ -241,7 +241,8 @@ class IncrementalsPlugin {
       return {
         artifactId: entry.artifactId,
         url: config.INCREMENTAL_URL + entry.path.replace(/[^/]+$/, ""),
-        version: entry.path.split("/").slice(-2)[0]
+        version: entry.path.split("/").slice(-2)[0],
+        groupId: entry.path.split("/").slice(0, 3).join(".")
       };
     })
 
