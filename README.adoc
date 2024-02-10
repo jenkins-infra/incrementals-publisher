@@ -70,7 +70,7 @@ publishing incrementally built artifacts into Artifactory.
 [source,json]
 ----
 {
-  "build_url" : "https://ci.jenkins.io/job/structs-plugin/job/PR-36/3/
+  "build_url" : "https://ci.jenkins.io/job/structs-plugin/job/PR-36/3/"
 }
 ----
 
