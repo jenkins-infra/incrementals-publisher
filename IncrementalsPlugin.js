@@ -240,9 +240,10 @@ class IncrementalsPlugin {
     const entriesForDisplay = entries.map(entry => {
       return {
         artifactId: entry.artifactId,
-        url: config.INCREMENTAL_URL + entry.path.replace(/[^/]+$/, ""),
-        version: entry.path.split("/").slice(-2)[0],
-        groupId: entry.path.split("/").slice(0, 3).join(".")
+        groupId: entry.groupId,
+        version: entry.version,
+        hpi: (entry.packaging == "hpi" ? `${entry.artifactId}:incrementals;${entry.groupId};${entry.version}&#xA;` : ""),
+        url: config.INCREMENTAL_URL + entry.path.replace(/[^/]+$/, "")
       };
     })
 
