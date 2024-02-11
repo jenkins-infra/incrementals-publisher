@@ -242,7 +242,7 @@ class IncrementalsPlugin {
         artifactId: entry.artifactId,
         groupId: entry.groupId,
         version: entry.version,
-        hpi: (entry.packaging == "hpi" ? `<code>${entry.artifactId}:incrementals;${entry.groupId};${entry.version}</code>` : ""),
+        hpi: (entry.packaging == "hpi" ? `${entry.artifactId}:incrementals;${entry.groupId};${entry.version}&#xA;` : ""),
         url: config.INCREMENTAL_URL + entry.path.replace(/[^/]+$/, "")
       };
     })
