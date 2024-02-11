@@ -46,7 +46,9 @@ pipeline {
       }
       post {
         always {
-          recordIssues(tools: [
+          recordIssues(
+            enabledForFailure: true,
+            tools: [
               esLint(pattern: 'eslint-results.json'),
           ])
         }
