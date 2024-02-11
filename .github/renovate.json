@@ -5,13 +5,5 @@
     ":semanticCommitsDisabled",
     "schedule:monthly"
   ],
-  "regexManagers": [
-    {
-      "fileMatch": [".tool-versions"],
-      "matchStrings": ["nodejs (?<currentValue>.*?)\n"],
-      "depNameTemplate": "node",
-      "datasourceTemplate": "npm"
-    }
-  ],
   "rebaseWhen": "conflicted"
 }
