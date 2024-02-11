@@ -2,7 +2,16 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:base",
-    ":semanticCommitsDisabled"
+    ":semanticCommitsDisabled",
+    "schedule:monthly"
+  ],
+  "regexManagers": [
+    {
+      "fileMatch": [".tool-versions"],
+      "matchStrings": ["nodejs (?<currentValue>.*?)\n"],
+      "depNameTemplate": "node",
+      "datasourceTemplate": "npm"
+    }
   ],
   "rebaseWhen": "conflicted"
 }
