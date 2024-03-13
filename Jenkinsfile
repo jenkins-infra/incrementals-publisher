@@ -46,7 +46,9 @@ pipeline {
       }
       post {
         always {
-          recordIssues(tools: [
+          recordIssues(
+            enabledForFailure: true,
+            tools: [
               esLint(pattern: 'eslint-results.json'),
           ])
         }
@@ -66,12 +68,8 @@ pipeline {
     }
 
     stage('Release') {
-      when {
-        // Only deploy to production from infra.ci.jenkins.io
-        expression { infra.isInfra() }
-      }
       steps {
-        buildDockerAndPublishImage('incrementals-publisher', [automaticSemanticVersioning: true])
+        buildDockerAndPublishImage('incrementals-publisher', [automaticSemanticVersioning: true, targetplatforms: 'linux/amd64,linux/arm64', disablePublication: !infra.isInfra()])
       }
     }
   }
