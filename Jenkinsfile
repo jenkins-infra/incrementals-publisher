@@ -69,7 +69,7 @@ pipeline {
 
     stage('Release') {
       steps {
-        buildDockerAndPublishImage('incrementals-publisher', [automaticSemanticVersioning: true, targetplatforms: 'linux/amd64,linux/arm64', disablePublication: !infra.isInfra()])
+        buildDockerAndPublishImage('incrementals-publisher', [targetplatforms: 'linux/amd64,linux/arm64', disablePublication: !infra.isInfra()])
       }
     }
   }
