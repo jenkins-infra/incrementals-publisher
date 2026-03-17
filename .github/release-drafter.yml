@@ -1,5 +1,5 @@
-# See https://github.com/jenkinsci/.github/blob/master/.github/release-drafter.adoc
-_extends: jenkinsci/.github
+# https://github.com/jenkins-infra/.github/blob/master/.github/release-drafter.yml
+_extends: github:jenkins-infra/.github:/.github/release-drafter.yml
 # Required for https://github.com/jenkins-infra/pipeline-library/blob/master/vars/buildDockerAndPublishImage.groovy
 name-template: 'next'
 tag-template: 'next'
