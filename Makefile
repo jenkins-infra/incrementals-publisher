@@ -33,7 +33,7 @@ run: ## run the docker hub
 
 .PHONY: test
 test: ## run tests outside of docker
-	[ -e node_modules ] || npm install 
+	[ -e node_modules ] || npm ci 
 	npm run test
 
 .PHONY: help
