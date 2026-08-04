@@ -1,3 +1,6 @@
+// infra.ci.jenkins.io defaults to arm64 container agents (faster in Azure) while ci.jenkins.io has the default spot amd64 used by Java builds (faster in AWS).
+final String agentLabel = infra.isInfra() ? 'jnlp-linux-arm64' : 'maven-25'
+
 pipeline {
   options {
     timeout(time: 60, unit: 'MINUTES')
@@ -7,7 +10,7 @@ pipeline {
   }
 
   agent {
-    label 'linux-arm64-docker || arm64linux'
+    label agentLabel
   }
 
   environment {
