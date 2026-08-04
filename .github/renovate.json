@@ -5,5 +5,6 @@
     ":semanticCommitsDisabled",
     "schedule:monthly"
   ],
-  "rebaseWhen": "conflicted"
+  "rebaseWhen": "conflicted",
+  "ignoreDeps": ["node"]
 }
